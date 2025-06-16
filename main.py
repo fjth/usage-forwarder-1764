@@ -3,8 +3,16 @@ import requests
 import json
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
+import argparse
 
 load_dotenv()
+
+parser = argparse.ArgumentParser(description="Fetch and forward power usage data")
+parser.add_argument(
+    "--backfill-days", type=int, default=0,
+    help="Number of days to backfill (0 = only yesterday)"
+)
+args = parser.parse_args()
 
 # Project ID for Blockbax API
 PROJECT_ID = os.getenv("BLOCKBAX_PROJECT_ID")
@@ -45,9 +53,11 @@ def get_access_token():
         raise e
 
 
-def fetch_power_usage(token):
-    date = datetime.now() - timedelta(days=1)
-    date_str = date.strftime("%Y%m%d")
+def fetch_power_usage(token, date_str=None):
+    # Determine the target date (YYYYMMDD)
+    if not date_str:
+        date = datetime.now(timezone.utc) - timedelta(days=1)
+        date_str = date.strftime("%Y%m%d")
     
     common_headers = {
         "Authorization": f"Bearer {token}"
@@ -151,7 +161,18 @@ def main():
             print("No existing measurements for yesterday; proceeding with fetch and send.")
         print("Authenticating with HetMeetbedrijf...")
         token = get_access_token()
-        print("Fetching power usage...")
+        if args.backfill_days > 0:
+            print(f"Backfilling last {args.backfill_days} days...")
+            for days_ago in range(args.backfill_days, 0, -1):
+                date = datetime.now(timezone.utc) - timedelta(days=days_ago)
+                date_str = date.strftime("%Y%m%d")
+                print(f"Fetching power usage for {date_str}...")
+                data = fetch_power_usage(token, date_str)
+                print(f"Sending data for {date_str} to Blockbax...")
+                forward_to_blockbax(data)
+            print("Backfill complete.")
+            return
+        print("Fetching power usage for yesterday...")
         data = fetch_power_usage(token)
         print("Sending data to Blockbax...")
         forward_to_blockbax(data)
