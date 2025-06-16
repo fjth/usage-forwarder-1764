@@ -23,6 +23,7 @@ CLIENT_SECRET = os.getenv("HETMEETBEDRIJF_CLIENT_SECRET")
 TOKEN_URL = os.getenv("HETMEETBEDRIJF_TOKEN_URL")
 BLOCKBAX_API_KEY = os.getenv("BLOCKBAX_API_KEY")
 BLOCKBAX_URL = os.getenv("BLOCKBAX_URL")
+LEVERING_METRIC_ID = os.getenv("LEVERING_METRIC_ID")
 
 
 def get_yesterday():
@@ -127,9 +128,11 @@ def check_run_yesterday():
     """Return True if any measurement for yesterday already exists in Blockbax."""
     # 1. Search all subjects in the project
     subjects_url = f"https://api.blockbax.com/v1/projects/{PROJECT_ID}/subjects"
-    resp = requests.get(subjects_url,
-                         json={}, 
-                         headers={"Authorization": f"ApiKey {BLOCKBAX_API_KEY}"})
+    resp = requests.get(
+        subjects_url,
+        params={"size": 1},
+        headers={"Authorization": f"ApiKey {BLOCKBAX_API_KEY}"}
+    )
     resp.raise_for_status()
     subjects = resp.json().get("result", [])
     subject_ids = [s["id"] for s in subjects if "id" in s]
@@ -139,16 +142,22 @@ def check_run_yesterday():
         hour=23, minute=59, second=59, microsecond=0
     ).strftime("%Y-%m-%dT%H:%M:%SZ")
     measurements_url = f"https://api.blockbax.com/v1/projects/{PROJECT_ID}/measurements"
-    payload = {
-        "subjectIds": subject_ids,
+    params = {
+        "subjectIds": ",".join(subject_ids),
         "toDate": yesterday_end,
-        "take": 1
+        "size": 1,
+        "metricIds": LEVERING_METRIC_ID
     }
-    resp2 = requests.post(measurements_url,
-                          json=payload,
-                          headers={"Authorization": f"ApiKey {BLOCKBAX_API_KEY}"})
+    resp2 = requests.get(measurements_url,
+                         params=params,
+                         headers={"Authorization": f"ApiKey {BLOCKBAX_API_KEY}"})
     resp2.raise_for_status()
-    return bool(resp2.json().get("result"))
+    series_data = resp2.json().get("series", [])
+    # If any series entry has measurements, consider yesterday run existing
+    for series in series_data:
+        if series.get("measurements"):
+            return True
+    return False
 
 
 def main():

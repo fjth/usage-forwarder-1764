@@ -32,10 +32,11 @@ jobs:
         env:
           HETMEETBEDRIJF_CLIENT_ID: ${{ secrets.HETMEETBEDRIJF_CLIENT_ID }}
           HETMEETBEDRIJF_CLIENT_SECRET: ${{ secrets.HETMEETBEDRIJF_CLIENT_SECRET }}
-          TOKEN_URL: ${{ secrets.TOKEN_URL }}
+          HETMEETBEDRIJF_TOKEN_URL: ${{ secrets.HETMEETBEDRIJF_TOKEN_URL }}
           PROJECT_ID: ${{ secrets.BLOCKBAX_PROJECT_ID }}
           BLOCKBAX_API_KEY: ${{ secrets.BLOCKBAX_API_KEY }}
           BLOCKBAX_URL: ${{ secrets.BLOCKBAX_URL }}
+          LEVERING_METRIC_ID: ${{ secrets.LEVERING_METRIC_ID }}
         run: |
           source venv/bin/activate
           python main.py
