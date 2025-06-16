@@ -14,8 +14,8 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-# Project ID for Blockbax API
-PROJECT_ID = os.getenv("BLOCKBAX_PROJECT_ID")
+# Project ID for Blockbax API (from either PROJECT_ID or BLOCKBAX_PROJECT_ID)
+PROJECT_ID = os.getenv("PROJECT_ID") or os.getenv("BLOCKBAX_PROJECT_ID")
 
 # Load secrets from environment
 CLIENT_ID = os.getenv("HETMEETBEDRIJF_CLIENT_ID")
