@@ -1,0 +1,43 @@
+name: Daily Usage Forwarder
+
+on:
+  schedule:
+    - cron: '0 2 * * *'    # 02:00 UTC
+    - cron: '0 10 * * *'   # 10:00 UTC
+    - cron: '0 18 * * *'   # 18:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: daily-usage-forwarder
+  cancel-in-progress: false
+
+jobs:
+  forwarder:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+
+      - name: Install dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Run usage-forwarder script
+        env:
+          HETMEETBEDRIJF_CLIENT_ID: ${{ secrets.HETMEETBEDRIJF_CLIENT_ID }}
+          HETMEETBEDRIJF_CLIENT_SECRET: ${{ secrets.HETMEETBEDRIJF_CLIENT_SECRET }}
+          TOKEN_URL: ${{ secrets.TOKEN_URL }}
+          PROJECT_ID: ${{ secrets.BLOCKBAX_PROJECT_ID }}
+          BLOCKBAX_API_KEY: ${{ secrets.BLOCKBAX_API_KEY }}
+          BLOCKBAX_URL: ${{ secrets.BLOCKBAX_URL }}
+        run: |
+          source venv/bin/activate
+          python main.py
