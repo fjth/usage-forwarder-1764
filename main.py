@@ -137,13 +137,17 @@ def check_run_yesterday():
     subjects = resp.json().get("result", [])
     subject_ids = [s["id"] for s in subjects if "id" in s]
 
-    # 2. Search measurements with toDate = yesterday at 23:59:59 UTC
+    # 2. Search measurements with fromDate and toDate for yesterday in UTC
+    yesterday_start = (datetime.now(timezone.utc) - timedelta(days=1)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    ).strftime("%Y-%m-%dT%H:%M:%SZ")
     yesterday_end = (datetime.now(timezone.utc) - timedelta(days=1)).replace(
         hour=23, minute=59, second=59, microsecond=0
     ).strftime("%Y-%m-%dT%H:%M:%SZ")
     measurements_url = f"https://api.blockbax.com/v1/projects/{PROJECT_ID}/measurements"
     params = {
         "subjectIds": ",".join(subject_ids),
+        "fromDate": yesterday_start,
         "toDate": yesterday_end,
         "size": 1,
         "metricIds": LEVERING_METRIC_ID
@@ -152,6 +156,7 @@ def check_run_yesterday():
                          params=params,
                          headers={"Authorization": f"ApiKey {BLOCKBAX_API_KEY}"})
     resp2.raise_for_status()
+    # print("Measurements search response:", resp2.json())
     series_data = resp2.json().get("series", [])
     # If any series entry has measurements, consider yesterday run existing
     for series in series_data:
